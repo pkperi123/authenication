@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import express from "express";
 import mongoose from "mongoose";
 import env from "dotenv";
+import md5 from "md5";
 
 env.config();
 
@@ -18,10 +19,6 @@ const userSchema = new mongoose.Schema({
     email : String,
     password : String
 });
-
-const secret = process.env.SECRETS
-
-userSchema.plugin(encrypt,{secret:secret,encryptedFields:["password"]});
 
 const User = new mongoose.model("user",userSchema);
 
@@ -40,7 +37,7 @@ app.get("/register",(req,res)=>{
 app.post("/register",async (req,res)=>{
     const newUser = await new User({
         email: req.body.username,
-        password: req.body.password
+        password: md5(req.body.password)
     });
     newUser.save().then(()=>{
         res.render("secrets.ejs");
@@ -52,7 +49,7 @@ app.post("/register",async (req,res)=>{
 app.post("/login",(req,res)=>{
     
     const username = req.body.username;
-    const password = req.body.password;
+    const password = md5(req.body.password);
     User.findOne({email:username}).then((founduser)=>{
         if(founduser){
             if(founduser.password===password){
