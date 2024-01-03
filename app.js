@@ -4,11 +4,13 @@ import express from "express";
 import mongoose from "mongoose";
 import env from "dotenv";
 import md5 from "md5";
+import bcrypt from "bcrypt";
 
 env.config();
 
 const app = express();
 const port = 3000;
+const saltRounds =10;
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended:true}));
@@ -35,9 +37,10 @@ app.get("/register",(req,res)=>{
 });
 
 app.post("/register",async (req,res)=>{
+    const hash = bcrypt.hashSync(req.body.password, saltRounds);
     const newUser = await new User({
         email: req.body.username,
-        password: md5(req.body.password)
+        password: hash
     });
     newUser.save().then(()=>{
         res.render("secrets.ejs");
@@ -49,10 +52,10 @@ app.post("/register",async (req,res)=>{
 app.post("/login",(req,res)=>{
     
     const username = req.body.username;
-    const password = md5(req.body.password);
+    const password = req.body.password
     User.findOne({email:username}).then((founduser)=>{
         if(founduser){
-            if(founduser.password===password){
+            if(bcrypt.compare(password, founduser.password)){
                 res.render("secrets.ejs");
             }
         }
